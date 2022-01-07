@@ -1,31 +1,63 @@
 package main
 
-import "github.com/influxdata/influxdb-client-go/api"
+import (
+	"strings"
 
-type Tree struct {
-	root   *Node
-	leaves []*Node
+	"github.com/influxdata/influxdb-client-go/api"
+)
+
+const (
+	getTagKeys = "flux/tag_keys_by_measurement.flux"
+	getValues  = "all_tag_values_by_tag.flux"
+)
+
+type Node interface {
+	Key() string
+	Insert(key string, tierTokens []string, api *MeasurementAPI, ancestors []*Node)
 }
 
-type Node struct {
+type Tree struct {
+	root  *Node
+	tree  *Tree
+	tiers map[int]string
+}
+
+type Key struct {
 	key       string
 	ancestors []*Node // parent and all levels above for filtering purposes
 	children  map[string]*Node
 }
 
-func (t *Tree) Insert(key string, qAPI *api.QueryAPI) {
-	if key == "MEASUREMENT" {
-		qAPI.Query(getTagKeys)
-		// TODO
+type Value struct {
+	key       string
+	ancestors []*Node
+	child     *Node
+}
+
+func (tt *Tree) Insert(tokens []string) {}
+
+func ruleToBranches(rule string, table *api.QueryTableResult) [][]string {
+	tokens := strings.Split(rule, ",")
+	var branches [][]string
+	for table.Next() {
+		record := table.Record()
+		var branch []string
+		for _, token := range tokens {
+			if val, ok := record.Values()[token]; ok {
+				branch = append(branch, val.(string))
+			}
+		}
+		branches = append(branches, branch)
 	}
+	return branches
 }
 
-type Data map[string][]string
-
-func (d Data) getKeyValues(key) {
-	return d[key]
-}
-
+// func createChildren(key string, vals []string) map[string]*Node {
+// 	children := make(map[string]*Node)
+// 	for _, val := range vals { // these values become keys to new nodes
+// 		children[key] = NewNode(key, )
+// 	}
+// }
 // func NewTree(rule string) Tree {
 // 	for _, token := range tokens {
 // 		switch token {

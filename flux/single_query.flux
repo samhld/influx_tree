@@ -1,0 +1,7 @@
+from(bucket: "%s")
+  |> range(start: -20h)
+  |> filter(fn: (r) => r["_measurement"] == "%s")
+  |> last()
+  |> group()
+  |> drop(columns: ["_start", "_stop", "_time"])
+  |> rename(columns: {_measurement: "MEASUREMENT"})
