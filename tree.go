@@ -13,37 +13,35 @@ const (
 )
 
 type Tree struct {
-	root  *Node
-	tree  *Tree
-	tiers map[int]string
+	Root *Node `json:"root"`
 }
 
 type Node struct {
-	key      string
-	parent   *Node
-	children map[string]*Node
+	Key      string           `json:"key"`
+	Parent   *Node            `json:"-"`
+	Children map[string]*Node `json:"children"`
 }
 
 func (t *Tree) Insert(branch []string) {
 	tokens := branch
 	rootKey := tokens[0]
 	tokens = tokens[1:]
-	if t.root == nil {
-		t.root = &Node{rootKey, nil, make(map[string]*Node)}
-	} else if t.root.key != rootKey {
-		panic(fmt.Sprintf("%v doesn't match %v", tokens, t.root.key))
+	if t.Root == nil {
+		t.Root = &Node{rootKey, nil, make(map[string]*Node)}
+	} else if t.Root.Key != rootKey {
+		panic(fmt.Sprintf("%v doesn't match %v", tokens, t.Root.Key))
 	}
 
-	m := t.root.children
-	parent := t.root
+	m := t.Root.Children
+	parent := t.Root
 	for _, token := range tokens {
 		if exists, ok := m[token]; ok {
-			m = exists.children // next iteration will look at the branch's children
+			m = exists.Children // next iteration will look at the branch's Children
 			continue
 		}
 		// t.tiers[i] = token
 		m[token] = &Node{token, parent, map[string]*Node{}}
-		m = m[token].children
+		m = m[token].Children
 	}
 }
 
@@ -57,7 +55,7 @@ func ruleToBranches(rule string, table *api.QueryTableResult) [][]string {
 			if val, ok := record.Values()[token]; ok {
 				branch = append(branch, val.(string))
 				if token == "_field" {
-					branch = append(branch, fmt.Sprintf("%f", record.Values()["_value"].(float64)))
+					branch = append(branch, fmt.Sprintf("%.2f", record.Values()["_value"].(float64)))
 				}
 			}
 		}
@@ -67,18 +65,18 @@ func ruleToBranches(rule string, table *api.QueryTableResult) [][]string {
 }
 
 func (t *Tree) Print() {
-	if t.root == nil {
-		fmt.Println("empty-tree")
+	if t.Root == nil {
+		fmt.Println("empty-Tree")
 		return
 	}
 	depth := 0
-	fmt.Println(t.root.String(depth))
+	fmt.Println(t.Root.String(depth))
 }
 
 func (n *Node) String(depth int) string {
 	repr := ""
-	repr = repr + fmt.Sprintf("depth=%d key=%s\n", depth, n.key)
-	for _, child := range n.children {
+	repr = repr + fmt.Sprintf("depth=%d Key=%s\n", depth, n.Key)
+	for _, child := range n.Children {
 		repr = repr + strings.Repeat("\t", depth+1) + child.String(depth+1)
 	}
 	return repr

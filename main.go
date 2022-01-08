@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go"
@@ -12,21 +13,18 @@ import (
 func main() {
 	measAPI := setup()
 	flux := fmt.Sprintf(readFlux("flux/single_query.flux"), measAPI.bucket, "test")
-	result, err := measAPI.queryAPI.Query(context.Background(), flux)
+	table, err := measAPI.queryAPI.Query(context.Background(), flux)
 	if err != nil {
 		log.Fatalf("query err: %q", err)
 	}
 
-	branches := ruleToBranches("MEASUREMENT,region,host,_field", result)
-	tree := Tree{}
-	for _, branch := range branches {
-		tree.Insert(branch)
-	}
+	sMux := http.NewServeMux()
+	tree := &Tree{}
+	treeSvr := TreeServer{sMux, tree, table}
+	sMux.HandleFunc("/process", treeSvr.processRule)
+	sMux.HandleFunc("/", index)
 
-	for _, branch := range branches {
-		fmt.Println(branch)
-	}
-	tree.Print()
+	http.ListenAndServe(":5000", treeSvr)
 }
 
 func setup() *MeasurementAPI {
