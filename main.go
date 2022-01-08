@@ -12,7 +12,6 @@ import (
 func main() {
 	measAPI := setup()
 	flux := fmt.Sprintf(readFlux("flux/single_query.flux"), measAPI.bucket, "test")
-	// flux := fmt.Sprintf(readFlux("flux/tag_keys_by_measurement.flux"), measAPI.bucket, measAPI.measurement)
 	result, err := measAPI.queryAPI.Query(context.Background(), flux)
 	if err != nil {
 		log.Fatalf("query err: %q", err)
@@ -27,9 +26,6 @@ func main() {
 	for _, branch := range branches {
 		fmt.Println(branch)
 	}
-	// fmt.Printf("Tree root: %#v\n", tree.root)
-	// fmt.Printf("Tree root children: %#v\n", tree.root.children)
-	// fmt.Printf("us-west's children: %#v\n", tree.root.children["us-west"].children)
 	tree.Print()
 }
 
@@ -46,20 +42,3 @@ func setup() *MeasurementAPI {
 
 	return measAPI
 }
-
-// func main() {
-// 	tree := Tree{}
-// 	tree.Insert("test")
-// 	tree.Insert("key1")
-// 	tree.Insert("key2")
-// 	printHeads(tree.head)
-// }
-
-// func printHeads(start *Node) {
-// 	fmt.Printf("node: %s\n", start.key)
-// 	fmt.Printf("node prev: %+v\n", start.prev)
-// 	fmt.Printf("node next: %+v\n", start.next)
-// 	if start.next != nil {
-// 		printHeads(start.next)
-// 	}
-// }
