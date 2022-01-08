@@ -19,11 +19,22 @@ func main() {
 	}
 
 	branches := ruleToBranches("MEASUREMENT,region,host,_field", result)
-	fmt.Printf("branches: %q", branches)
+	tree := Tree{}
+	for _, branch := range branches {
+		tree.Insert(branch)
+	}
+
+	for _, branch := range branches {
+		fmt.Println(branch)
+	}
+	// fmt.Printf("Tree root: %#v\n", tree.root)
+	// fmt.Printf("Tree root children: %#v\n", tree.root.children)
+	// fmt.Printf("us-west's children: %#v\n", tree.root.children["us-west"].children)
+	tree.Print()
 }
 
 func setup() *MeasurementAPI {
-	measurement := "test"
+	measurement := "temp"
 	bucket := "test"
 	org := os.Getenv("INFLUX_REMOTE_ORG")
 	token := os.Getenv("INFLUX_REMOTE_TOKEN")

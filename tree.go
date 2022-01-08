@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/influxdata/influxdb-client-go/api"
@@ -11,30 +12,40 @@ const (
 	getValues  = "all_tag_values_by_tag.flux"
 )
 
-type Node interface {
-	Key() string
-	Insert(key string, tierTokens []string, api *MeasurementAPI, ancestors []*Node)
-}
-
 type Tree struct {
 	root  *Node
 	tree  *Tree
 	tiers map[int]string
 }
 
-type Key struct {
-	key       string
-	ancestors []*Node // parent and all levels above for filtering purposes
-	children  map[string]*Node
+type Node struct {
+	key      string
+	parent   *Node
+	children map[string]*Node
 }
 
-type Value struct {
-	key       string
-	ancestors []*Node
-	child     *Node
-}
+func (t *Tree) Insert(branch []string) {
+	tokens := branch
+	rootKey := tokens[0]
+	tokens = tokens[1:]
+	if t.root == nil {
+		t.root = &Node{rootKey, nil, make(map[string]*Node)}
+	} else if t.root.key != rootKey {
+		panic(fmt.Sprintf("%v doesn't match %v", tokens, t.root.key))
+	}
 
-func (tt *Tree) Insert(tokens []string) {}
+	m := t.root.children
+	parent := t.root
+	for _, token := range tokens {
+		if exists, ok := m[token]; ok {
+			m = exists.children // next iteration will look at the branch's children
+			continue
+		}
+		// t.tiers[i] = token
+		m[token] = &Node{token, parent, map[string]*Node{}}
+		m = m[token].children
+	}
+}
 
 func ruleToBranches(rule string, table *api.QueryTableResult) [][]string {
 	tokens := strings.Split(rule, ",")
@@ -45,6 +56,9 @@ func ruleToBranches(rule string, table *api.QueryTableResult) [][]string {
 		for _, token := range tokens {
 			if val, ok := record.Values()[token]; ok {
 				branch = append(branch, val.(string))
+				if token == "_field" {
+					branch = append(branch, fmt.Sprintf("%f", record.Values()["_value"].(float64)))
+				}
 			}
 		}
 		branches = append(branches, branch)
@@ -52,33 +66,20 @@ func ruleToBranches(rule string, table *api.QueryTableResult) [][]string {
 	return branches
 }
 
-// func createChildren(key string, vals []string) map[string]*Node {
-// 	children := make(map[string]*Node)
-// 	for _, val := range vals { // these values become keys to new nodes
-// 		children[key] = NewNode(key, )
-// 	}
-// }
-// func NewTree(rule string) Tree {
-// 	for _, token := range tokens {
-// 		switch token {
-// 		case "MEASUREMENT":
+func (t *Tree) Print() {
+	if t.root == nil {
+		fmt.Println("empty-tree")
+		return
+	}
+	depth := 0
+	fmt.Println(t.root.String(depth))
+}
 
-// 		case "FIELD":
-
-// 		default:
-// 		}
-// 	}
-// }
-
-// func (n *Node) String() string {
-// 	key := fmt.Sprintf("key: %s\n", n.key)
-// 	prev := ""
-// 	next := ""
-// 	if n.prev != nil {
-// 		prev = fmt.Sprintf("prev: %q\n", n.prev)
-// 	}
-// 	if n.next != nil {
-// 		next = fmt.Sprintf("next: %q\n", n.next)
-// 	}
-// 	return key + prev + next
-// }
+func (n *Node) String(depth int) string {
+	repr := ""
+	repr = repr + fmt.Sprintf("depth=%d key=%s\n", depth, n.key)
+	for _, child := range n.children {
+		repr = repr + strings.Repeat("\t", depth+1) + child.String(depth+1)
+	}
+	return repr
+}

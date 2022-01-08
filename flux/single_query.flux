@@ -1,5 +1,5 @@
 from(bucket: "%s")
-  |> range(start: -20h)
+  |> range(start: -25h)
   |> filter(fn: (r) => r["_measurement"] == "%s")
   |> last()
   |> group()
