@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 
 	"github.com/influxdata/influxdb-client-go/api"
 )
@@ -25,12 +26,10 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 func (ts *TreeServer) processRule(w http.ResponseWriter, r *http.Request) {
 	rule := r.FormValue("rule")
-	// if err != nil {
-	// 	fmt.Printf("err reading form body: %v", err)
-	// 	return
-	// }
-	branches := ruleToBranches(rule, ts.table)
-	fmt.Printf("%q\n", branches)
+	fmt.Printf("rule: %s\n", rule)
+	tokens := strings.Split(rule, ",")
+	ts.tree.setKeys(tokens)
+	branches := ruleToBranches(tokens, ts.table)
 	for _, branch := range branches {
 		ts.tree.Insert(branch)
 	}

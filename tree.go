@@ -13,7 +13,8 @@ const (
 )
 
 type Tree struct {
-	Root *Node `json:"root"`
+	Root *Node    `json:"root"`
+	Keys []string `json:"-"`
 }
 
 type Node struct {
@@ -23,45 +24,53 @@ type Node struct {
 }
 
 func (t *Tree) Insert(branch []string) {
-	tokens := branch
-	rootKey := tokens[0]
-	tokens = tokens[1:]
+	fmt.Printf("branch: %q\n", branch)
+	rootKey := branch[0]
+	branch = branch[1:]
 	if t.Root == nil {
 		t.Root = &Node{rootKey, nil, make(map[string]*Node)}
 	} else if t.Root.Key != rootKey {
-		panic(fmt.Sprintf("%v doesn't match %v", tokens, t.Root.Key))
+		panic(fmt.Sprintf("%v doesn't match %v", branch, t.Root.Key))
 	}
 
 	m := t.Root.Children
 	parent := t.Root
-	for _, token := range tokens {
-		if exists, ok := m[token]; ok {
-			m = exists.Children // next iteration will look at the branch's Children
+	for _, bElem := range branch {
+		if exists, ok := m[bElem]; ok {
+			fmt.Printf("child %#v exists", m[bElem])
+			m = exists.Children
+			fmt.Printf("exists children: %#v\n", m)
 			continue
 		}
-		// t.tiers[i] = token
-		m[token] = &Node{token, parent, map[string]*Node{}}
-		m = m[token].Children
+		m[bElem] = &Node{bElem, parent, map[string]*Node{}}
+		m = m[bElem].Children
 	}
 }
 
-func ruleToBranches(rule string, table *api.QueryTableResult) [][]string {
-	tokens := strings.Split(rule, ",")
+func ruleToBranches(tokens []string, table *api.QueryTableResult) [][]string {
 	var branches [][]string
 	for table.Next() {
 		record := table.Record()
 		var branch []string
-		for _, token := range tokens {
+		for i, token := range tokens {
 			if val, ok := record.Values()[token]; ok {
+				if (i > 0) && (i < len(tokens)-1) {
+					branch = append(branch, token)
+				}
 				branch = append(branch, val.(string))
 				if token == "_field" {
 					branch = append(branch, fmt.Sprintf("%.2f", record.Values()["_value"].(float64)))
 				}
 			}
 		}
+		fmt.Printf("branch: %q\n", branch)
 		branches = append(branches, branch)
 	}
 	return branches
+}
+
+func (t *Tree) setKeys(tokens []string) {
+	t.Keys = tokens
 }
 
 func (t *Tree) Print() {

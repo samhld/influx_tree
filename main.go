@@ -12,7 +12,7 @@ import (
 
 func main() {
 	measAPI := setup()
-	flux := fmt.Sprintf(readFlux("flux/single_query.flux"), measAPI.bucket, "test")
+	flux := fmt.Sprintf(readFlux("flux/single_query.flux"), measAPI.bucket, measAPI.measurement)
 	table, err := measAPI.queryAPI.Query(context.Background(), flux)
 	if err != nil {
 		log.Fatalf("query err: %q", err)
@@ -28,7 +28,7 @@ func main() {
 }
 
 func setup() *MeasurementAPI {
-	measurement := "temp"
+	measurement := "sensor"
 	bucket := "test"
 	org := os.Getenv("INFLUX_REMOTE_ORG")
 	token := os.Getenv("INFLUX_REMOTE_TOKEN")

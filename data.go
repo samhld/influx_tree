@@ -20,15 +20,3 @@ func readFlux(fileName string) string {
 	}
 	return string(byteFlux)
 }
-
-// func genFlux(bucket, measurement string, filterCount int) string {
-// 	s := `from(bucket: "%s")
-// 	range(start: -6h)
-// `
-// 	for i < filterCount {
-// 	}
-// }
-
-func genFilter(key, value string) string {
-	return fmt.Sprintf(`  |> filter(fn: (r) => r.%s == "%s")`, key, value)
-}
